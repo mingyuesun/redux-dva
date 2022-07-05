@@ -1,17 +1,24 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from 'react'
+import dva, { connect } from 'dva'
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+const app = dva()
+app.model({
+  namespace: 'counter',
+  state: {number: 0},
+  reducers: {
+    add(state) {
+      return {number: state.number + 1}
+    }
+  }
+})
+function Counter(props) {
+  return (
+    <div>
+      <p>{props.number}</p>
+      <button onClick={() => props.dispatch({type: 'counter/add'})}>+</button>
+    </div>
+  )
+}
+const ConnectedCounter = connect(state => state.counter)(Counter)
+app.router(() => <ConnectedCounter/>)
+app.start("#root")
