@@ -11,7 +11,8 @@ function dva() {
 		_models: [],
 		router,
 		_router: null,
-		start
+		start,
+		getActionCreators
 	}
 	const initialReducers = {}
 
@@ -24,6 +25,21 @@ function dva() {
 		app._router = router
 	}
 
+	function getActionCreators() {
+		let actionCreators = {}
+		for (const model of app._models) {
+			let { reducers } = model
+			// actionCreators.counter1 = {add: () => ({type: add})}
+			actionCreators[model.namespace] = Object.keys(reducers).reduce((memo, key) => {
+				// key = counter1/add
+				// memo.add = () => ({type: 'counter/add'})
+				memo[key.split('/')[1]] = () => ({type: key})
+				return memo
+			}, {}) 
+		}
+		return actionCreators
+	}
+	
 	function start(selector) {
 		for (const model of app._models) {
 			initialReducers[model.namespace] = getReducer(model)
