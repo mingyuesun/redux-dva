@@ -10,6 +10,9 @@ function prefixNamespace(model) {
 	if (model.reducers) {
 		model.reducers = prefix(model.reducers, model.namespace)
 	}
+	if (model.effects) {
+		model.effects = prefix(model.effects, model.namespace)
+	}
 	return model
 }
 

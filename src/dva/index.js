@@ -1,8 +1,10 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider, connect } from 'react-redux'
-import { combineReducers, createStore } from 'redux'
+import { combineReducers, createStore, applyMiddleware } from 'redux'
 import prefixNamespace from './prefixNamespace'
+import createSagaMiddleware from 'redux-saga'
+import * as sagaEffects from 'redux-saga/effects'
 export { connect }
 
 function dva() {
@@ -28,14 +30,19 @@ function dva() {
 	function getActionCreators() {
 		let actionCreators = {}
 		for (const model of app._models) {
-			let { reducers } = model
+			let { reducers, effects } = model
 			// actionCreators.counter1 = {add: () => ({type: add})}
-			actionCreators[model.namespace] = Object.keys(reducers).reduce((memo, key) => {
+			let reducersActionCreators = Object.keys(reducers).reduce((memo, key) => {
 				// key = counter1/add
 				// memo.add = () => ({type: 'counter/add'})
 				memo[key.split('/')[1]] = () => ({type: key})
 				return memo
-			}, {}) 
+			}, {})
+			let effectsActionCreators = Object.keys(effects).reduce((memo, key) => {
+				memo[key.split('/')[1]] = () => ({type: key})
+				return memo
+			}, {})
+			actionCreators[model.namespace] = {...reducersActionCreators, ...effectsActionCreators}
 		}
 		return actionCreators
 	}
@@ -45,9 +52,12 @@ function dva() {
 			initialReducers[model.namespace] = getReducer(model)
 		}
 		
+		const sagas = getSagas(app)
 		const combineReducer = createReducer()
-		const store = createStore(combineReducer)
-		
+		const sagaMiddleware = createSagaMiddleware()
+		// const store = createStore(combineReducer)
+		const store = applyMiddleware(sagaMiddleware)(createStore)(combineReducer)
+		sagas.forEach(saga => sagaMiddleware.run(saga))
 		createRoot(document.querySelector(selector)).render(
 			<Provider store={store}>
 				{app._router()}
@@ -70,7 +80,26 @@ function dva() {
 				return state
 			}
 			return reducer
-		} 
+		}
+		
+		function getSagas(app) {
+			const sagas = []
+			for(const model of app._models) {
+				sagas.push(getSaga(model))
+			}
+			return sagas
+		}
+	}
+
+	function getSaga(model) {
+		const { effects } = model
+		return function*() {
+			for (const key in effects) {
+				yield sagaEffects.takeEvery(key, function* (action) {
+					yield effects[key](action, sagaEffects)
+				})
+			}
+		}
 	}
 	
 	return app
