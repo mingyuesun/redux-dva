@@ -5,6 +5,7 @@ import { combineReducers, createStore, applyMiddleware } from 'redux'
 import prefixNamespace from './prefixNamespace'
 import createSagaMiddleware from 'redux-saga'
 import * as sagaEffects from 'redux-saga/effects'
+import { BrowserRouter } from 'react-router-dom'
 export { connect }
 
 function dva() {
@@ -60,7 +61,9 @@ function dva() {
 		sagas.forEach(saga => sagaMiddleware.run(saga))
 		createRoot(document.querySelector(selector)).render(
 			<Provider store={store}>
-				{app._router()}
+				<BrowserRouter>
+					{app._router()}
+				</BrowserRouter>
 			</Provider>
 		)
 

@@ -1,5 +1,6 @@
 import React from 'react'
 import dva, { connect } from './dva'
+import { Routes, Route, Link } from './dva/router'
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 const app = dva()
@@ -57,5 +58,22 @@ function Counter2({number, add, asyncAdd}) {
   )
 }
 const ConnectedCounter2 = connect(state => state.counter2, counter2)(Counter2)
-app.router(() => <><ConnectedCounter1/><hr/><ConnectedCounter2/></>)
+function Home() {
+  return <div>Home</div>
+}
+app.router(() => (
+    <>
+      <ul>
+        <li><Link to="/">Home</Link></li>
+        <li><Link to="/counter1">Counter1</Link></li>
+        <li><Link to="/counter2">Counter2</Link></li>
+      </ul>
+      <Routes>
+        <Route path="/" exact={true} element={<Home/>}/>
+        <Route path="/counter1" element={< ConnectedCounter1/>}/>
+        <Route path="/counter2" element={< ConnectedCounter2/>}/>
+      </Routes>
+    </>
+  )
+)
 app.start("#root")
